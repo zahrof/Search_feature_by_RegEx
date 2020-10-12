@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GraphAdjacencyMatrix {
     int nbreStates;
@@ -34,20 +36,36 @@ public class GraphAdjacencyMatrix {
                         addState(finR2, 0, fin);
                         this.counterStates++;
                         return fin;
-
                     case RegEx.CONCAT:
                         this.counterStates = fillMatrix(tree.subTrees.get(0),counter);
                         addState(this.counterStates,0,this.counterStates+1);
                         this.counterStates++;
                         return fillMatrix(tree.subTrees.get(1), this.counterStates);
                     case RegEx.ETOILE:
-                        System.out.println("I'm in star");
-                        break;
+                        addState(counter,0,counter+1);
+                        this.counterStates = fillMatrix(tree.subTrees.get(0),counter+1);
+                        addState(this.counterStates, 0,counter+1);
+                        addState(counter, 0, this.counterStates+1);
+                        addState(this.counterStates,0,this.counterStates+1);
+                        this.counterStates++;
+                        return this.counterStates;
                     default: // it is a leaf
                         addState(counter, tree.root, counter+1);
                         return counter+1;
                 }
-                return 10000;
+    }
+
+    /**
+     * Renvoi l'ensemble d'etats atteignable depuis state avec les epsilon transitions
+     * @param state
+     * @return
+     */
+    public Set<Integer> EpsilonClosure(int state){
+        Set<Integer> set;
+        ArrayList<Integer> a = this.automata[state][0];
+        if(a== null) set = new HashSet<>();
+        else set = new HashSet<>(a);
+        return set;
     }
 
 
@@ -55,5 +73,15 @@ public class GraphAdjacencyMatrix {
         RegExTree tree = RegEx.parser(arg);
         GraphAdjacencyMatrix automata = new GraphAdjacencyMatrix(1000);
         System.out.print(automata.fillMatrix(tree, 0));
+        automata.EpsilonClosure(0);
+        automata.EpsilonClosure(1);
+        automata.EpsilonClosure(2);
+        automata.EpsilonClosure(3);
+        automata.EpsilonClosure(4);
+        automata.EpsilonClosure(5);
+        automata.EpsilonClosure(6);
+        automata.EpsilonClosure(7);
+        automata.EpsilonClosure(8);
+        automata.EpsilonClosure(9);
     }
 }
