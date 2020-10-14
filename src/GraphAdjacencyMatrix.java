@@ -1,11 +1,46 @@
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class GraphAdjacencyMatrix {
+
+    class RennomageSommets {
+        int nouveauNom;
+        Set<Integer> ensembleSommets;
+
+        public RennomageSommets(int nouveauNom) {
+            this.nouveauNom = nouveauNom;
+            this.ensembleSommets = new HashSet<>();
+        }
+
+        public RennomageSommets(int nouveauNom, Set<Integer> ensembleSommets) {
+            this.nouveauNom = nouveauNom;
+            this.ensembleSommets = ensembleSommets;
+        }
+
+        public void addState(int sommet){
+            this.ensembleSommets.add(sommet);
+        }
+
+        public int getNouveauNom() {
+            return nouveauNom;
+        }
+
+        public void setNouveauNom(int nouveauNom) {
+            this.nouveauNom = nouveauNom;
+        }
+
+        public Set<Integer> getEnsembleSommets() {
+            return ensembleSommets;
+        }
+
+    }
+
     int nbreStates;
     ArrayList<Integer>[][] automata;
     int counterStates=0;
+    int counterNewStates=0;
 
     public GraphAdjacencyMatrix(int nbreStates) {
         this.nbreStates= nbreStates;
@@ -60,7 +95,7 @@ public class GraphAdjacencyMatrix {
      * @param state
      * @return
      */
-    public Set<Integer> EpsilonClosure(int state){
+    public Set<Integer> epsilonClosure(int state){
         Set<Integer> set;
         ArrayList<Integer> a = this.automata[state][0];
         if(a== null) set = new HashSet<>();
@@ -68,20 +103,48 @@ public class GraphAdjacencyMatrix {
         return set;
     }
 
+    /**
+     * Renvoi l'ensemble d'états atteignable avec le caractère caract. depuis l'état state.
+     * @param state
+     * @param caract
+     * @return
+     */
+    public Set<Integer> move(int state, int caract){
+        Set<Integer> set;
+        ArrayList<Integer> a = this.automata[state][caract];
+        if(a== null) set = new HashSet<>();
+        else set = new HashSet<>(a);
+        return set;
+    }
+
+    GraphAdjacencyMatrix subsetConstruction(GraphAdjacencyMatrix nfa){
+        GraphAdjacencyMatrix res = new GraphAdjacencyMatrix(1000);
+        LinkedList<RennomageSommets> fifo = new LinkedList<>();
+        Set<Integer> set = epsilonClosure(0);
+        set.add(0);
+
+        RennomageSommets rs1 = new RennomageSommets(this.counterNewStates, set);
+        fifo.add(rs1);
+        while(!fifo.isEmpty()){
+            RennomageSommets rs = fifo.pop();
+            for(int i=64; i <=122 ; i++){
+                for (Integer j: rs.ensembleSommets) {
+                    Set<Integer> set2 = move(j,i);
+
+                }
+
+                
+            }
+        }
+
+        return res;
+    }
+
 
     public static void main(String arg[]){
         RegExTree tree = RegEx.parser(arg);
         GraphAdjacencyMatrix automata = new GraphAdjacencyMatrix(1000);
         System.out.print(automata.fillMatrix(tree, 0));
-        automata.EpsilonClosure(0);
-        automata.EpsilonClosure(1);
-        automata.EpsilonClosure(2);
-        automata.EpsilonClosure(3);
-        automata.EpsilonClosure(4);
-        automata.EpsilonClosure(5);
-        automata.EpsilonClosure(6);
-        automata.EpsilonClosure(7);
-        automata.EpsilonClosure(8);
-        automata.EpsilonClosure(9);
+        automata.epsilonClosure(0);
     }
 }
