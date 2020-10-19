@@ -30,7 +30,6 @@ public class GraphAdjacencyMatrix {
 
         public Set<Integer> getEnsembleSommets() {
             return ensembleSommets;
-
         }
 
     }
@@ -115,6 +114,7 @@ public class GraphAdjacencyMatrix {
      * @param caract
      * @return
      */
+
     public Set<Integer> move(int state, int caract){
         Set<Integer> set;
         ArrayList<Integer> a = this.automata[state][caract];
