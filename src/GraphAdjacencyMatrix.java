@@ -6,38 +6,16 @@ public class GraphAdjacencyMatrix {
         int nouveauNom;
         Set<Integer> ensembleSommets;
 
-        public RennomageSommets(int nouveauNom) {
-            this.nouveauNom = nouveauNom;
-            this.ensembleSommets = new HashSet<>();
-        }
-
         public RennomageSommets(int nouveauNom, Set<Integer> ensembleSommets) {
             this.nouveauNom = nouveauNom;
             this.ensembleSommets = ensembleSommets;
         }
 
-        public void addState(int sommet){
-            this.ensembleSommets.add(sommet);
-        }
-
-        public int getNouveauNom() {
-            return nouveauNom;
-        }
-
-        public void setNouveauNom(int nouveauNom) {
-            this.nouveauNom = nouveauNom;
-        }
-
-        public Set<Integer> getEnsembleSommets() {
-            return ensembleSommets;
-        }
 
     }
 
     int nbreStates;
     ArrayList<Integer>[][] automata;
-    int counterStates=0;
-    int counterNewStates=0;
 
     public GraphAdjacencyMatrix(int nbreStates) {
         this.nbreStates= nbreStates;
@@ -48,41 +26,47 @@ public class GraphAdjacencyMatrix {
         this.automata =new ArrayList[nbreStates][130];
     }
 
-    public void addState(int idState, int nbreASCII, int stateToAdd){
+    /**
+     * automata [0][1] = 1 -> state 0 is a starting statement
+     * automata [0][2] = 0 -> state 0 is not an accepting  state
+     */
+    public void addState(int idState, int nbreASCII, int stateToAdd, int etatInitial, int etatFinal){
         if(this.automata[idState][nbreASCII]==null) this.automata[idState][nbreASCII] = new ArrayList<>();
         this.automata[idState][nbreASCII].add(stateToAdd);
+
     }
 
     // Renvoi l'indice de l'etat finale. L'etat initial sera tjrs 0.
     public int fillMatrix(RegExTree tree, int counter){
+        int counterStates=0;
                 switch (tree.root){
                     case RegEx.ALTERN:
                         addState(counter,0 ,counter+1);
-                        this.counterStates = fillMatrix(tree.subTrees.get(0),counter+1);
+                        counterStates = fillMatrix(tree.subTrees.get(0),counter+1);
                         int finR1 = counterStates;
-                        addState(counter,0,this.counterStates+1);
-                        this.counterStates= fillMatrix(tree.subTrees.get(1),this.counterStates+1);
+                        addState(counter,0,counterStates+1);
+                        counterStates= fillMatrix(tree.subTrees.get(1),counterStates+1);
                         int finR2 = counterStates;
                         int fin = counterStates+1;
                         addState(finR1, 0, fin);
                         addState(finR2, 0, fin);
-                        this.counterStates++;
+                        counterStates++;
                         return fin;
                     case RegEx.CONCAT:
-                        this.counterStates = fillMatrix(tree.subTrees.get(0),counter);
-                        addState(this.counterStates,0,this.counterStates+1);
-                        this.counterStates++;
-                        return fillMatrix(tree.subTrees.get(1), this.counterStates);
+                        counterStates = fillMatrix(tree.subTrees.get(0),counter);
+                        addState(counterStates,0,counterStates+1);
+                        counterStates++;
+                        return fillMatrix(tree.subTrees.get(1), counterStates);
                     case RegEx.ETOILE:
                         addState(counter,0,counter+1);
-                        this.counterStates = fillMatrix(tree.subTrees.get(0),counter+1);
-                        addState(this.counterStates, 0,counter+1);
-                        addState(counter, 0, this.counterStates+1);
-                        addState(this.counterStates,0,this.counterStates+1);
-                        this.counterStates++;
-                        return this.counterStates;
+                        counterStates = fillMatrix(tree.subTrees.get(0),counter+1);
+                        addState(counterStates, 0,counter+1);
+                        addState(counter, 0, counterStates+1);
+                        addState(counterStates,0,counterStates+1);
+                        counterStates++;
+                        return counterStates;
                     default: // it is a leaf
-                        addState(counter, tree.root, counter+1);
+                        addState(counter, tree.root, counter+1,);
                         return counter+1;
                 }
     }
@@ -114,7 +98,6 @@ public class GraphAdjacencyMatrix {
      * @param caract
      * @return
      */
-
     public Set<Integer> move(int state, int caract){
         Set<Integer> set;
         ArrayList<Integer> a = this.automata[state][caract];
@@ -133,15 +116,17 @@ public class GraphAdjacencyMatrix {
 
     GraphAdjacencyMatrix subsetConstruction(GraphAdjacencyMatrix nfa){
         GraphAdjacencyMatrix res = new GraphAdjacencyMatrix(1000);
+        int counterNewStates =0;
         // Create the start state of the DFA by taking the epsilon-closure of the start state of the NFA
-        RennomageSommets rs1 = new RennomageSommets(this.counterNewStates,nfa.epsilonClosure(0));
-        this.counterNewStates++;
+        RennomageSommets rs1 = new RennomageSommets(counterNewStates,nfa.epsilonClosure(0));
+        counterNewStates++;
         Queue<RennomageSommets> q = new LinkedList<>();
         q.add(rs1);
 
         //For each possible input symbol:
         while(!q.isEmpty()) {
             RennomageSommets rs = q.poll();
+            //TO DO : test for EACH char
             for (int i = 97; i <= 99; i++) {
                 //Apply move to the newly-created state and the input symbol; this will return a set of states.
                 Set<Integer> set1 = new HashSet<>();
@@ -152,13 +137,12 @@ public class GraphAdjacencyMatrix {
                     continue;
                 }
                 if(!set1.isEmpty()) {
-                    RennomageSommets rs2 = new RennomageSommets(this.counterNewStates, set1);
-                    this.counterNewStates++;
+                    RennomageSommets rs2 = new RennomageSommets(counterNewStates, set1);
+                    counterNewStates++;
                     q.add(rs2);
                     res.addState(rs.nouveauNom, i, rs2.nouveauNom);
                 }
             }
-            System.out.println(q.isEmpty());
         }
         return res;
     }
@@ -168,7 +152,6 @@ public class GraphAdjacencyMatrix {
         RegExTree tree = RegEx.parser(arg);
         GraphAdjacencyMatrix automata = new GraphAdjacencyMatrix(1000);
         System.out.print(automata.fillMatrix(tree, 0));
-        automata.epsilonClosure(4);
         automata = automata.subsetConstruction(automata);
     }
 }
