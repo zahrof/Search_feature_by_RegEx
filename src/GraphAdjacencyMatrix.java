@@ -30,6 +30,7 @@ public class GraphAdjacencyMatrix {
 
         public Set<Integer> getEnsembleSommets() {
             return ensembleSommets;
+
         }
 
     }
