@@ -36,6 +36,12 @@ public class GraphAdjacencyMatrix {
 
     }
 
+    public void addState(int idState, int nbreASCII, int stateToAdd){
+        if(this.automata[idState][nbreASCII]==null) this.automata[idState][nbreASCII] = new ArrayList<>();
+        this.automata[idState][nbreASCII].add(stateToAdd);
+
+    }
+
     // Renvoi l'indice de l'etat finale. L'etat initial sera tjrs 0.
     public int fillMatrix(RegExTree tree, int counter){
         int counterStates=0;
@@ -66,7 +72,7 @@ public class GraphAdjacencyMatrix {
                         counterStates++;
                         return counterStates;
                     default: // it is a leaf
-                        addState(counter, tree.root, counter+1,);
+                        addState(counter, tree.root, counter+1);
                         return counter+1;
                 }
     }
