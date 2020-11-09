@@ -2,7 +2,7 @@
 
     public class GraphAdjacencyMatrix {
 
-        class RennomageSommets {
+        static class RennomageSommets {
             int nouveauNom;
             Set<State> ensembleSommets;
             boolean final_state = false;
@@ -12,9 +12,27 @@
                 this.ensembleSommets = ensembleSommets;
                 this.final_state=final_state;
             }
+
+            public RennomageSommets(int nouveauNom, boolean final_state) {
+                this.nouveauNom = nouveauNom;
+                this.final_state = final_state;
+                this.ensembleSommets = new HashSet<>();
+            }
+
+            public void addState(State state) {
+                boolean into=false;
+                for (State s: this.ensembleSommets){
+                    if(state.name_state==s.name_state && state.final_state==s.final_state) {
+                        into = true;
+                        break;
+                    }
+                }
+
+                if(!into) this.ensembleSommets.add(state);
+            }
         }
 
-        class State {
+        static class State {
             int name_state;
             boolean final_state = false;
 
@@ -26,10 +44,31 @@
             public int getName_state() {
                 return name_state;
             }
+
+            @Override
+            public boolean equals(Object o) {
+
+                // If the object is compared with itself then return true
+                if (o == this) {
+                    return true;
+                }
+
+        /* Check if o is an instance of Complex or not
+          "null instanceof [type]" also returns false */
+                if (!(o instanceof State)) {
+                    return false;
+                }
+
+                // typecast o to Complex so that we can compare data members
+                State c = (State) o;
+
+                // Compare the data members and return accordingly
+                return (this.name_state==c.name_state && this.final_state==c.final_state);
+            }
         }
 
         int nbreStates;
-        ArrayList<State>[][] automata;
+        ArrayList<State>[][] automata; // Array List?
 
         public GraphAdjacencyMatrix(int nbreStates) {
             this.nbreStates= nbreStates;
@@ -40,15 +79,6 @@
             this.automata =new ArrayList[nbreStates][130];
         }
 
-        /**
-         * automata [0][1] = 1 -> state 0 is a starting statement
-         * automata [0][2] = 0 -> state 0 is not an accepting  state
-         */
-        public void addState(int idState, int nbreASCII, int stateToAdd, int etatInitial, int etatFinal){
-            if(this.automata[idState][nbreASCII]==null) this.automata[idState][nbreASCII] = new ArrayList<>();
-            this.automata[idState][nbreASCII].add(new State(stateToAdd, false));
-
-        }
 
         public void addState(int idState, int nbreASCII, int stateToAdd, boolean final_state){
             if(this.automata[idState][nbreASCII]==null) this.automata[idState][nbreASCII] = new ArrayList<>();
@@ -214,27 +244,40 @@
             return res;
         }
 
-        Set<RennomageSommets> getFinalsNonFinals(GraphAdjacencyMatrix dfa){
+        public static Set<RennomageSommets> getFinalsNonFinals(GraphAdjacencyMatrix dfa){
             Set<RennomageSommets> srs = new HashSet<>();
+            RennomageSommets finaux = new RennomageSommets(0, true);
+            RennomageSommets nonFinaux = new RennomageSommets(1, false);
+            nonFinaux.addState(new State(0, false));
             // Où la boucle doit elle s'arreter?
-            for(int i =0; i <100; i++){
+            for(int i =0; i <10; i++){
                 // Il faudra faire pour chaque char
                 for (int j =97; j <= 99; j++){
-                    if(dfa.automata[i][j])
+                    // cad si avec ce char on peut aller quelque part
+                    if (dfa.automata[i][j]!=null) {
+                        if (!dfa.automata[i][j].isEmpty()) {
+                            for (State s : dfa.automata[i][j]) {
+                                if (s.final_state) finaux.addState(s);
+                                else nonFinaux.addState(s);
+                            }
+                        }
+                    }
                 }
 
             }
-            return null;
+            srs.add(finaux);
+            srs.add(nonFinaux);
+            return srs;
         }
 
 
         public static void main(String arg[]){
             RegExTree tree = RegEx.parser(arg);
-
             int automatonSize= countSize(tree,0);
             GraphAdjacencyMatrix automata = new GraphAdjacencyMatrix(automatonSize);
             System.out.println("Size automaton "+ automatonSize);
             System.out.print(automata.fillMatrix(tree, 0,automatonSize));
             automata = automata.subsetConstruction(automata);
+            getFinalsNonFinals(automata);
         }
     }
