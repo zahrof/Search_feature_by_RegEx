@@ -2,6 +2,17 @@
 
     public class GraphAdjacencyMatrix {
 
+        static class Couple{
+            State a;
+            State b;
+
+            public Couple(State a, State b) {
+                this.a = a;
+                this.b = b;
+            }
+
+        }
+
         static class RennomageSommets {
             int nouveauNom;
             Set<State> ensembleSommets;
@@ -27,8 +38,16 @@
                         break;
                     }
                 }
-
                 if(!into) this.ensembleSommets.add(state);
+            }
+
+            @Override
+            public String toString() {
+                String eS="";
+                for (State s: this.ensembleSommets) {
+                    eS+= "Nom sous-sommet "+ s.name_state + "  état final: "+ s.final_state+ "\n";
+                }
+                return String.format("Nom sommet: "+ this.nouveauNom+ "\n   Etat final "+ this.final_state + "\n  "+ eS);
             }
         }
 
@@ -43,6 +62,10 @@
 
             public int getName_state() {
                 return name_state;
+            }
+            @Override
+            public String toString() {
+                return String.format("Nom sommet: "+ this.name_state+ "\n   Etat final "+ this.final_state + "\n  ");
             }
 
             @Override
@@ -63,7 +86,7 @@
                 State c = (State) o;
 
                 // Compare the data members and return accordingly
-                return (this.name_state==c.name_state && this.final_state==c.final_state);
+                return ((this.name_state==c.name_state && this.final_state ==c.final_state));
             }
         }
 
@@ -270,6 +293,135 @@
             return srs;
         }
 
+        private Set<RennomageSommets> minimisation() {
+            Set<RennomageSommets> fnf = getFinalsNonFinals(this);
+
+            int newCounter=0;
+            boolean changes=false;
+            do{
+                Set<RennomageSommets> newStates = new HashSet<>();
+                for (RennomageSommets rs : fnf) {
+                    Set<Couple> couples = new HashSet<>();
+                    if(rs.ensembleSommets.size()==1){
+                        newStates.add(new RennomageSommets(newCounter, rs.ensembleSommets, rs.final_state));
+                        newCounter++;
+                        continue;
+                    }
+                    Iterator<State> i = rs.ensembleSommets.iterator();
+                    while(i.hasNext()){
+                        State current = i.next();
+                        for (State s: rs.ensembleSommets) {
+                            if((current.name_state==s.name_state)&&(current.final_state==s.final_state)) continue;
+                            boolean into = false;
+                            for (Couple c: couples) if((current==c.a && s ==c.b)||(s==c.a && current==c.b)) into=true;
+                            if(!into) couples.add(new Couple(current, s));
+                        }
+                    }
+                    for (Couple c: couples) {
+                        boolean equals= true;
+                        System.out.println("Element ("+ c.a +" , "+c.b+")" );
+                        //Faudra mettre pour tous les char
+                        for(int k = 97; k <= 99; k++){
+                            if(((this.automata[c.a.name_state][k]!=null)&&
+                                    (this.automata[c.b.name_state][k]==null))
+                                    ||((this.automata[c.a.name_state][k]==null)&&
+                                    (this.automata[c.b.name_state][k]!=null))){
+                                equals = false;
+                                Set<State> es1 = new HashSet<>(),eS2 = new HashSet<>();
+                                es1.add(c.a); eS2.add(c.b);
+                                RennomageSommets a = new RennomageSommets(newCounter, es1, c.a.final_state);
+                                if(!present(newStates,a)){
+                                    newStates.add(a);
+                                    newCounter++;
+                                }
+
+                                RennomageSommets b = new RennomageSommets(newCounter, eS2, c.b.final_state);
+                                if(!present(newStates,b)){
+                                    newStates.add(b);
+                                    newCounter++;
+                                }
+                                continue;
+                            }
+                            if((this.automata[c.a.name_state][k]==null)&&
+                                    (this.automata[c.b.name_state][k]==null)) continue;
+                            if(!sameStateSet(c.a,c.b,fnf)) equals= false;
+                            if(equals){
+                                newStates= deleteSeparatedCouple(c.a, c.b,newStates);
+                                Set<State> eS = new HashSet<>();
+                                eS.add(c.a); eS.add(c.b);
+                                newStates.add(new RennomageSommets(newCounter, eS, c.b.final_state));
+                                newCounter++;
+                            }
+                        }
+                    }
+
+                }
+                if(equals(newStates,fnf)) changes= false;
+                fnf = newStates;
+            }while(changes);
+            return fnf;
+        }
+
+        private boolean equals(Set<RennomageSommets> newStates, Set<RennomageSommets> fnf) {
+            if(newStates.size()!=fnf.size()) return false;
+            for (RennomageSommets rs: newStates) {
+                boolean contains = false;
+                for (RennomageSommets rs2: fnf) {
+                    if(equals(rs,rs2)) contains = true;
+                }
+                if(!contains) return false;
+            }
+            return true;
+        }
+
+        private Set<RennomageSommets> deleteSeparatedCouple(State a, State b, Set<RennomageSommets> newStates) {
+            Set<RennomageSommets> res = new HashSet<>();
+            for (RennomageSommets rs: newStates) {
+                RennomageSommets x = new RennomageSommets(rs.nouveauNom, rs.final_state);
+                Set<State> y = new HashSet<>();
+                for (State u:rs.ensembleSommets) {
+                    if(u.equals(a)||u.equals(b)) continue;
+                    y.add(u);
+                }
+                x.ensembleSommets = y;
+                if(y.size()>0) res.add(x);
+            }
+            return res;
+        }
+
+        private boolean present(Set<RennomageSommets> newStates, RennomageSommets a) {
+            for (RennomageSommets s: newStates) if(equals(a,s)) return true;
+            return false;
+        }
+
+        private boolean equals(RennomageSommets a, RennomageSommets s) {
+            if(a.final_state!=s.final_state) return false;
+            if(a.ensembleSommets.size()!=s.ensembleSommets.size()) return false;
+            for (State b: a.ensembleSommets) {
+                boolean present = false;
+                for (State c: s.ensembleSommets)
+                    if(c.name_state==b.name_state && c.final_state==b.final_state) present=true;
+                if(!present) return false;
+            }
+            return true;
+
+        }
+
+        private boolean sameStateSet(State elt1, State elt2, Set<RennomageSommets> fnf) {
+            int iteration =0;
+            // Pas très propre sorry ^^'
+            int findElt1=999999; // Infinite
+            int findElt2=9999999;
+            for (RennomageSommets rs: fnf) {
+                for (State s : rs.ensembleSommets) {
+                    if((elt1.name_state==s.name_state)&&(elt1.final_state==s.final_state)) findElt1 = iteration;
+                    if((elt2.name_state==s.name_state)&&(elt2.final_state==s.final_state)) findElt2 = iteration;
+                }
+                iteration++;
+            }
+            return findElt1==findElt2;
+        }
+
 
         public static void main(String arg[]){
             RegExTree tree = RegEx.parser(arg);
@@ -278,6 +430,19 @@
             System.out.println("Size automaton "+ automatonSize);
             System.out.print(automata.fillMatrix(tree, 0,automatonSize));
             automata = automata.subsetConstruction(automata);
-            getFinalsNonFinals(automata);
+            Set<RennomageSommets> minAutomata = automata.minimisation();
+            automata = creationMinAutomata(minAutomata, automata);
         }
+
+        private static GraphAdjacencyMatrix creationMinAutomata(Set<RennomageSommets> minAutomata,
+                                                                GraphAdjacencyMatrix automata) {
+            GraphAdjacencyMatrix res = new GraphAdjacencyMatrix(minAutomata.size());
+            int counterNewStates=0;
+            for (RennomageSommets rs: minAutomata) {
+
+            }
+            return res;
+        }
+
+
     }
