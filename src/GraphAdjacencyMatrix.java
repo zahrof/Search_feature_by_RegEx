@@ -3,14 +3,10 @@
     public class GraphAdjacencyMatrix {
 
         static class Couple{
-            State a;
-            State b;
-
+            State a; State b;
             public Couple(State a, State b) {
-                this.a = a;
-                this.b = b;
+                this.a = a; this.b = b;
             }
-
         }
 
         static class RennomageSommets {
@@ -53,7 +49,7 @@
 
         static class State {
             int name_state;
-            boolean final_state = false;
+            boolean final_state;
 
             public State(int name_state, boolean final_state) {
                 this.name_state = name_state;
@@ -70,22 +66,9 @@
 
             @Override
             public boolean equals(Object o) {
-
-                // If the object is compared with itself then return true
-                if (o == this) {
-                    return true;
-                }
-
-        /* Check if o is an instance of Complex or not
-          "null instanceof [type]" also returns false */
-                if (!(o instanceof State)) {
-                    return false;
-                }
-
-                // typecast o to Complex so that we can compare data members
+                if (o == this) return true;
+                if (!(o instanceof State)) return false;
                 State c = (State) o;
-
-                // Compare the data members and return accordingly
                 return ((this.name_state==c.name_state && this.final_state ==c.final_state));
             }
         }
@@ -345,14 +328,14 @@
                             if((this.automata[c.a.name_state][k]==null)&&
                                     (this.automata[c.b.name_state][k]==null)) continue;
                             if(!sameStateSet(c.a,c.b,fnf)) equals= false;
-                            if(equals){
-                                newStates= deleteSeparatedCouple(c.a, c.b,newStates);
-                                Set<State> eS = new HashSet<>();
-                                eS.add(c.a); eS.add(c.b);
-                                newStates.add(new RennomageSommets(newCounter, eS, c.b.final_state));
-                                newCounter++;
-                            }
+                        }if(equals){
+                            newStates= deleteSeparatedCouple(c.a, c.b,newStates);
+                            Set<State> eS = new HashSet<>();
+                            eS.add(c.a); eS.add(c.b);
+                            newStates.add(new RennomageSommets(newCounter, eS, c.b.final_state));
+                            newCounter++;
                         }
+
                     }
 
                 }
@@ -376,6 +359,7 @@
 
         private Set<RennomageSommets> deleteSeparatedCouple(State a, State b, Set<RennomageSommets> newStates) {
             Set<RennomageSommets> res = new HashSet<>();
+            if(newStates.size()==0) return res;
             for (RennomageSommets rs: newStates) {
                 RennomageSommets x = new RennomageSommets(rs.nouveauNom, rs.final_state);
                 Set<State> y = new HashSet<>();
@@ -390,8 +374,22 @@
         }
 
         private boolean present(Set<RennomageSommets> newStates, RennomageSommets a) {
-            for (RennomageSommets s: newStates) if(equals(a,s)) return true;
+            for (RennomageSommets s: newStates) if(isSubSet(a,s)) return true;
             return false;
+        }
+
+        //a est un sous ensemble de s
+        private boolean isSubSet(RennomageSommets a, RennomageSommets s) {
+            for(State a1 : a.ensembleSommets){
+                boolean isHere=false;
+                for (State a2: s.ensembleSommets ) {
+                    if(a1.equals(a2)) isHere=true;
+                    break;
+                }
+                if (!isHere) return false;
+            }
+
+            return true;
         }
 
         private boolean equals(RennomageSommets a, RennomageSommets s) {
@@ -431,14 +429,35 @@
             System.out.print(automata.fillMatrix(tree, 0,automatonSize));
             automata = automata.subsetConstruction(automata);
             Set<RennomageSommets> minAutomata = automata.minimisation();
+             minAutomata = rennomage(minAutomata);
             automata = creationMinAutomata(minAutomata, automata);
+        }
+
+        private static Set<RennomageSommets> rennomage(Set<RennomageSommets> minAutomata) {
+            Set<RennomageSommets> rs = new HashSet<>();
+            int counter=0;
+            for (RennomageSommets a: minAutomata) {
+                RennomageSommets aux = new RennomageSommets(counter, a.ensembleSommets,a.final_state);
+                rs.add(aux);
+                counter++;
+            }
+
+            return rs;
         }
 
         private static GraphAdjacencyMatrix creationMinAutomata(Set<RennomageSommets> minAutomata,
                                                                 GraphAdjacencyMatrix automata) {
             GraphAdjacencyMatrix res = new GraphAdjacencyMatrix(minAutomata.size());
-            int counterNewStates=0;
             for (RennomageSommets rs: minAutomata) {
+                ArrayList<Integer> tab = new ArrayList<>();
+                for(State s2: rs.ensembleSommets){
+                    for(int i=97; i <=99; i++){
+                        if(automata.automata[s2.name_state][i]!=null) tab.add(i);
+                    }
+                    for(int n: tab){
+                        System.out.println("res["+rs.nouveauNom+"]["+n+"]");
+                    }
+                }
 
             }
             return res;
