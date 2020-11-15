@@ -2,6 +2,7 @@
 
     public class GraphAdjacencyMatrix {
 
+
         static class Couple{
             State a; State b;
             public Couple(State a, State b) {
@@ -164,6 +165,23 @@
                             return counter+1;
                     }
         }
+
+        @Override
+        public String toString() {
+            String res="------- AUTOMATE ------- \n";
+            int i =0;
+            for(int k =0; k <this.nbreStates; k++) {
+                for (int j = 97; j <= 99; j++) {
+                    if (this.automata[i][j] != null) {
+                        res += "automata[" + i + "][" + j + "]:" + this.automata[i][j] + "\n";
+                    }
+                    if (j == 99) i++;
+                }
+            }
+
+            return String.format(res);
+        }
+
 
         /**
          * Renvoi l'ensemble d'etats atteignable depuis state avec les epsilon transitions
@@ -429,8 +447,13 @@
             System.out.print(automata.fillMatrix(tree, 0,automatonSize));
             automata = automata.subsetConstruction(automata);
             Set<RennomageSommets> minAutomata = automata.minimisation();
+            System.out.println("min automata avant renommage"+minAutomata);
+            System.out.println();
              minAutomata = rennomage(minAutomata);
+            System.out.println("min automata apres renommage"+minAutomata);
+            System.out.println();
             automata = creationMinAutomata(minAutomata, automata);
+            System.out.println(" RES "+automata.toString());
         }
 
         private static Set<RennomageSommets> rennomage(Set<RennomageSommets> minAutomata) {
@@ -448,17 +471,44 @@
         private static GraphAdjacencyMatrix creationMinAutomata(Set<RennomageSommets> minAutomata,
                                                                 GraphAdjacencyMatrix automata) {
             GraphAdjacencyMatrix res = new GraphAdjacencyMatrix(minAutomata.size());
+            System.out.println("min automata "+minAutomata);
+            System.out.println();
             for (RennomageSommets rs: minAutomata) {
                 ArrayList<Integer> tab = new ArrayList<>();
                 for(State s2: rs.ensembleSommets){
                     for(int i=97; i <=99; i++){
                         if(automata.automata[s2.name_state][i]!=null) tab.add(i);
                     }
-                    for(int n: tab){
-                        System.out.println("res["+rs.nouveauNom+"]["+n+"]");
-                    }
+
+                }
+                for(int n: tab){
+                   // if(rs.nouveauNom==3) System.out.println("hey s2 "+ s2);
+                    System.out.println("res1["+rs.nouveauNom+"]["+n+"]");
+                   if(res.automata[rs.nouveauNom][n]==null){
+                       ArrayList<State> al = new ArrayList<>();
+                       al.add(find(automata,minAutomata,rs,n));
+                       res.automata[rs.nouveauNom][n] = al;
+                   }
                 }
 
+            }
+            return res;
+        }
+
+        private static State find(GraphAdjacencyMatrix autOr, Set<RennomageSommets> newAut,
+                                  RennomageSommets s, int n) {
+            Iterator<State> i = s.ensembleSommets.iterator();
+            State a = null;
+            if(i.hasNext()) a =  i.next();
+            State res = autOr.automata[a.name_state][n].get(0);
+
+            for(RennomageSommets rs : newAut){
+                for(State s3 : rs.ensembleSommets){
+                    if(s3.name_state==res.name_state) {
+                        System.out.println(" TOTO "+ rs.nouveauNom );
+                        return new State(rs.nouveauNom,rs.final_state);
+                    }
+                }
             }
             return res;
         }
