@@ -42,7 +42,7 @@ public class RegEx {
             try {
                 ret = parse();
                 int nbrStates=0;
-                GraphAdjacencyMatrix automateEpTrans = new GraphAdjacencyMatrix(nbrStates); 
+                AdjacencyMatrix automateEpTrans = new AdjacencyMatrix(nbrStates);
                 System.out.println("  >> Tree result: "+ret.toString()+".");
                 return ret;
             } catch (Exception e) {
@@ -227,7 +227,28 @@ public class RegEx {
         subTrees.add(dotBCEtoile);
         return new RegExTree(ALTERN, subTrees);
     }
+    //UTILITARY METHOD
+    public static int countSize(RegExTree tree, int counter ) {
+        if (tree.subTrees.size()==1) counter = countSize(tree.subTrees.get(0), counter);
+        else {
+            if (tree.subTrees.size() == 2) {
+                counter = countSize(tree.subTrees.get(0), counter);
+                counter = countSize(tree.subTrees.get(1), counter);
+            }
+        }
+        switch (tree.root) {
+            case RegEx.CONCAT:
+                break;
+            default:
+                counter = counter + 2;
+                break;
+        }
+        return counter;
+    }
 }
+
+
+
 
 //UTILITARY CLASS
 class RegExTree {
